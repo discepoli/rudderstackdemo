@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RudderStack Testing</title>
+
+<!-- <link rel="stylesheet" href="css/atom-one-dark.min.css"> -->
+<!-- <script src="js/highlight.min.js"></script> -->
+<!-- <script>hljs.highlightAll();</script> -->
+
+<script>
+
+  document.addEventListener('submit', (e) => { console.log('submit...') })
+  rudderanalytics = window.rudderanalytics = [];
+
+  var  methods = [
+    "load",
+    "page",
+    "track",
+    "identify",
+    "alias",
+    "group",
+    "ready",
+    "reset",
+    "getAnonymousId",
+    "setAnonymousId"
+  ];
+
+  for (var i = 0; i < methods.length; i++) {
+    var method = methods[i];
+    rudderanalytics[method] = function (methodName) {
+      return function () {
+        rudderanalytics.push([methodName].concat(Array.prototype.slice.call(arguments)));
+      };
+    }(method);
+  }
+
+  // set your writeKey here or use the filename /demo_writekey.html
+
+  // const writeKey = "1iYTYFYkfteuXxTj3eEt5CmeLvO"
+
+  const writeKey = window.localStorage.getItem('RS_writeKey')
+  const dataPlane = window.localStorage.getItem('RS_dataplane')
+
+    // todo: set from query params
+    const qp = () => {
+        let url = location.search;
+        let query = url.substr(1);
+        let ret = {};
+        query.split("&").forEach(function(e) {
+            let parm = e.split('=');
+            ret[parm[0]] = decodeURIComponent(parm[1]);
+          })
+        return ret;
+      }
+
+    const { rswk, rsdpurl } = qp()
+
+
+
+    rudderanalytics.load(writeKey, dataPlane);
+
+  var items = [];
+
+  var pages = [
+    'Home Page',
+    'Item - Something cool to buy',
+    'Category - Shirts',
+    'Landing Page - Competitor Comparison',
+    'Video Library',
+    'Demo Request',
+    'Contact Us'
+  ]
+
+  var sendEvent = (e) => {
+    console.log('RS Event ->', e) ;
+    if (e.type == 'track') {
+      if (e.event == 'purchase') {
+        rudderanalytics.track('purchase', {items: items})
+      } else {
+        rudderanalytics.track(e.event)
+      }
+      console.log('RS AnonymousId ->', rudderanalytics.getAnonymousId())
+    } else if (e.type == 'identify') {
+      var id = prompt('Enter your identifier');
+      rudderanalytics.identify(id, { name: "First Name" })
+      if (e.event == 'form_submit') {
+        rudderanalytics.track('form_submit', { form_id: "Demo Request" })
+      }
+
+
+      } else if (e.type == 'identifytraits') {
+          let id = prompt("Enter your identifier")
+        let traits = getTraits()
+        rudderanalytics.identify(id, traits)
+
+    } else if (e.type == 'reset') {
+      rudderanalytics.reset()
+      console.log('RS User Logout')
+      console.log('RS AnonymousId ->', rudderanalytics.getAnonymousId())
+    } else if (e.type == 'custom') {
+      eventKey = document.getElementById('customEvent').value
+      if (eventKey !== '') { rudderanalytics.track(eventKey) } else { rudderanalytics.track('custom event key not provided') }
+    } else if (e.type == 'page') {
+      pageView()
+    }
+  }
+
+  const pageView = () => {
+    rudderanalytics.page(pages[Math.floor(Math.random() * 7)])
+  }
+
+  let playing;
+  let playCount = 1
+
+  const autoPlay = () => {
+    document.getElementById('stop-button').toggleAttribute('disabled')
+    document.getElementById('start-button').toggleAttribute('disabled')
+    document.getElementById('running-loader').classList.remove('hidden')
+    startPlay()
+  }
+
+  const startPlay = () => {
+    pageView()
+    console.log('Sending AutoPlay Event', playCount)
+    playCount += 1
+    playing = setTimeout( "startPlay( )", 1000)
+    if (playCount > 100) { stopPlay() }
+  }
+
+  const stopPlay = () => {
+    document.getElementById('stop-button').toggleAttribute('disabled')
+    document.getElementById('start-button').toggleAttribute('disabled')
+    document.getElementById('running-loader').classList.add('hidden')
+    clearTimeout(playing);
+    playCount = 1
+  }
+
+  const addKey = (e) => {
+    e.preventDefault()
+    const inputKey = document.getElementById('key-input').value
+    const inputDataplane = document.getElementById('dataplane-input').value
+    if (inputKey !== '') { window.localStorage.setItem('RS_writeKey', inputKey) }
+    if (inputDataplane !== '') { window.localStorage.setItem('RS_dataplane', inputDataplane) }
+    document.getElementById('key-entry').classList.add("hidden")
+    document.getElementById('body').classList.remove("hidden")
+    setKeyOnDOM()
+    doReload()
+  }
+
+  const toggleWriteKey = () => {
+    document.getElementById('key-entry').classList.remove("hidden")
+    document.getElementById('body').classList.add("hidden")
+  }
+
+  const setKeyOnDOM = () => {
+    let storageKey = window.localStorage.getItem('RS_writeKey')
+    let storageDP = window.localStorage.getItem('RS_dataplane')
+    document.getElementById('current-key').innerHTML = storageKey
+    document.getElementById('current-dp').innerHTML = storageDP
+    document.getElementById('key-input').value = storageKey
+    document.getElementById('dataplane-input').value = storageDP
+  }
+
+  const doReload = () => { location.reload() }
+
+    const changeContent = (newBlock) => {
+        document.getElementById('codeBlock').innerHTML = newBlock
+    }
+
+    const getTraits = () => {
+      let k1 = document.getElementById('cT1k').value
+      let v1 = document.getElementById('cT1v').value
+      let k2 = document.getElementById('cT2k').value
+      let v2 = document.getElementById('cT2v').value
+        let traits = {}
+        traits[k1] = v1
+        traits[k2] = v2
+        return traits
+
+    }
+
+</script>
+
+<script defer src="https://cdn.rudderlabs.com/v1/rudder-analytics.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/mvp.css">
+
+<style>
+
+input {
+  display: inline;
+}
+
+      #current-key, #current-dp {
+        font-weight: 800;
+      }
+
+      .scroll {
+        padding-top: 400px
+      }
+
+      .lds-ellipsis {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 44px;
+      }
+      .lds-ellipsis div {
+        position: absolute;
+        top: 33px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #C0C0C0;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+      }
+      .lds-ellipsis div:nth-child(1) {
+        left: 8px;
+        animation: lds-ellipsis1 0.6s infinite;
+      }
+      .lds-ellipsis div:nth-child(2) {
+        left: 8px;
+        animation: lds-ellipsis2 0.6s infinite;
+      }
+      .lds-ellipsis div:nth-child(3) {
+        left: 32px;
+        animation: lds-ellipsis2 0.6s infinite;
+      }
+      .lds-ellipsis div:nth-child(4) {
+        left: 56px;
+        animation: lds-ellipsis3 0.6s infinite;
+      }
+      @keyframes lds-ellipsis1 {
+        0% {
+          transform: scale(0);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes lds-ellipsis3 {
+        0% {
+          transform: scale(1);
+        }
+        100% {
+          transform: scale(0);
+        }
+      }
+      @keyframes lds-ellipsis2 {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(24px, 0);
+        }
+      }
+
+      .hidden {
+          display: none;
+      }
+
+      @keyframes highlight {
+        0% {
+          background: red
+        }
+        100% {
+          background: none;
+        }
+      }
+
+      #highlight:target {
+        animation: highlight 1s;
+      }
+      section aside.double {
+        width: calc(var(--width-card) * 2)
+      }
+</style>
+</head>
+
+<body onScroll="sendEvent({type: 'track', event: 'scroll'})" style="height: 300vh">
+  <main>
+
+    <section id="key-entry">
+      <aside class="double">
+      <form onSubmit="addKey(event)">Dataplane URL: <input id="dataplane-input" type="text" /> Write Key: <input id="key-input" type="text" /> <input type="Submit" /></form>
+      </aside>
+      <aside>
+        Enter the writeKey and dataPlane URL from your source in your RudderStack dashboard. These will be used to initailize the SDK for the test events below.
+      </aside>
+    </section>
+
+  
+    <h1>RudderStack Testing</h1>
+    <section>
+    <aside><span>You're using:</span><br />
+      writeKey <span id="current-key"></span><br />
+      dataPlane <span id="current-dp"></span><br />
+      <span onClick="toggleWriteKey()">(Click here to change)<span></aside>
+    <aside class="double">
+      Your writeKey and dataPlane URL should be copied from a valid source in your RudderStack dashboard. When you enter them to the right, we initialize the SDK with those values and all calls below will be made using those values. You will be able to see the live events in the console here, or in the live event viewer in your RudderStack dashboard.
+    </aside>
+    </section>
+
+    <h2>Page Calls</h2>
+    <section>
+      <aside>
+        <h3>Send a page call</h3>
+        <button onClick="sendEvent({type: 'page'})">Page</button>
+      </aside>
+      <aside>
+        <h3>What's happening?</h3>
+        Under the hood, we're doing a simple call. If you were to instrument in your code, it would simply look like this:
+        <code>
+          rudderanalytics.page()
+        </code>
+      </aside>
+      <aside>
+        <h3>What's really happening?</h3>
+        The truth is, you get a lot of "free" data with your page call. Including referrers, utm params, device info and session information. 
+        <!--<code>
+          {<br />
+            &nbsp;&nbsp;"channel":"web",<br/>
+            &nbsp;&nbsp;"context":{
+              &nbsp;&nbsp;&nbsp;&nbsp;"app":{
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name":"RudderLabs JavaScript SDK",<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"namespace":"com.rudderlabs.javascript",<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"version":"1.33.0" },<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;"traits":{},<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;"library":{<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name":"RudderLabs JavaScript SDK",<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"version":"1.33.0" },<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;"userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15",<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;"locale":"en-US",<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;"os":{<br/>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name":"",<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"version":"" },<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;"screen":{<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"density":2,<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"width":1512,<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"height":982,<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"innerWidth":880,<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"innerHeight":779 },<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;"sessionId":1708104830906,"sessionStart":true,"campaign":{},"page":{"path":"/","referrer":"$direct","referring_domain":"","search":"","title":"RudderStack Testing","url":"http://localhost:8080/","tab_url":"http://localhost:8080/","initial_referrer":"http://localhost:8080/","initial_referring_domain":"localhost:8080"}},"type":"page","messageId":"7993a3b8-c526-4696-b985-a72955786da2","originalTimestamp":"2024-02-16T17:33:55.802Z","anonymousId":"4670fbc3-a349-4906-b85f-02083627df62","userId":"","properties":{"name":"Video Library","path":"/","referrer":"$direct","referring_domain":"","search":"","title":"RudderStack Testing","url":"http://localhost:8080/","tab_url":"http://localhost:8080/","initial_referrer":"http://localhost:8080/","initial_referring_domain":"localhost:8080"},"integrations":{"Google Analytics 4":{"clientId":"1146809616.1708104831","sessionId":"1708104831","sessionNumber":1},"All":true},"name":"Video Library","sentAt":"2024-02-16T17:33:55.810Z"}
+        </code>-->
+      </aside>
+    </section>
+
+    <h2>Track Calls</h2>
+    <section>
+      <aside>
+        <h3>Send a track call</h3>
+        <button onClick="sendEvent({type: 'track', event: 'event_key'})">Track Event</button>
+        <button onClick="sendEvent({type: 'track', event: 'purchase'})">Track Event: Purchase</button><br />
+        <button onClick="sendEvent({type: 'custom'})">Send custom event:</button>
+        <input id='customEvent' placeholder="event_name" />
+      </aside>
+      <aside>
+        <h3>What's happening?</h3>
+        A track call allows us to record an action (and optionally any options about the action) for a user:
+        <code>
+          rudderanalytics.track('event', {<br />
+          &nbsp;&nbsp;custom_property1: value,<br />
+          &nbsp;&nbsp;custom_property2: otherValue,<br />
+          &nbsp;&nbsp;action_type: buttton_click,<br />
+          &nbsp;&nbsp;button_color: blue<br />
+          })
+        </code>
+      </aside>
+      <aside>
+        <h3>But what is a track call?</h3>
+        A track call is used to track an action, any action. While page calls are typically specific to the load of a new page, track calls can be used for various activities like clicks, form submissions, resource creation or even scrolls. In addition to having an event name (which can be anything) tracks can also accept any number of properties to help describe the action. 
+      </aside>
+    </section>
+
+    <h2>Identify Calls</h2>
+    <section>
+      <aside>
+        <h3>Send an identify call</h3>
+        <button onClick="sendEvent({type: 'identify'})">Identify</button>
+        <button onClick="sendEvent({type: 'identifytraits'})">Identify w/ traits</button>
+        <br />
+        <input id='cT1k' placeholder="Key 1"> <input id="cT1v" placeholder="Value 1">
+        <br />
+        <input id='cT2k' placeholder="Key 2"> <input id="cT2v" placeholder="Value 2">
+      </aside>
+      <aside>
+        <h3>What's happening?</h3>
+        An identify call happens when we know who someone is and want to add an id (and optionally traits) for them. In your code it would look like:
+        <code>
+          rudderanalytics.identify('id', {<br />
+          &nbsp;&nbsp;email: 'ryan@rudderstack.com',<br />
+          &nbsp;&nbsp;name: 'Ryan',<br />
+          &nbsp;&nbsp;custom_trait: 'custom_value',<br />
+          })
+        </code>
+      </aside>
+      <aside>
+        <h3>But what is a identify call?</h3>
+        An identify call allows us to add an identifier, and optionally traits, to a user. The main difference in an identify call, is that this identifier (and the traits) are not only sent with the identify call, but now with every subsequent call (page, track, etc) until cookies are cleared or the reset call is made. Once you've sent an idetify call, try the track button below and you'll see that the userId and traits are now added to that payload. 
+        <button onClick="sendEvent({type: 'track', event: 'event_key'})">Track Event</button> 
+      </aside>
+    </section>
+
+    <h2>Full Examples</h2>
+    Below you'll find an easy way to send a collection of events through RudderStack to mimic a common use case. This will not only allow you to see the squenece of the events and how they are sent, but how multiple users might look. Additionally, if you have a data warehouse connected to your source, these events will create tables in our standard schema and help you understand how these events translate to tables. You can also use these as a starting point for a Profiles project with a full sample set of data. 
+    <section>
+      <aside>
+        <h3>E-commerce</h3>
+        E-commerce is a common use case for RudderStack. The button below will send a set of events to create an example dataset you may see for E-commerce use cases. Besides typical page calls, you'll see the following track calls:<br>
+        <code>
+          Product List Viewed<br>
+          Product Viewed<br>
+          Product Added<br>
+          Checkout Started<br>
+          Checkout Step Completed<br>
+          Order Completed<br>
+        </code><br>
+        This is only a subset of our standard E-commerce events, you can see the full spec <a href="https://www.rudderstack.com/docs/event-spec/ecommerce-events-spec/">here</a><br>
+        <button onClick="sendEvent({type: 'identify'})">Send e-commerce data</button>
+      </aside>
+    
+      <aside>
+        <h3>Saas Application</h3>
+        Another common use case is a SaaS application. While there's not a specific, pre-defined spec for that, below is a sampling of common events. These can be used to send a sequence of users and events to your data warehouse to undersand how that might look for the following events:
+        <code>
+          Form Submit<br>
+          User Signed Up<br>
+          User Signed In<br>
+          Invitation Sent<br>
+        </code><br>
+        While this is just a subset of events, it does conform to our standard event spec, which you can reference <a href="https://www.rudderstack.com/docs/event-spec/standard-events/">here</a>
+        <button onClick="sendEvent({type: 'identify'})">Send saas data</button>
+      </aside>
+    
+      <aside>
+        <h3>Profiles QuickStart<sup>new</sup></h3>
+        Our Profiles Quickstart guide (hosted by Snowflake) can be used to quickly build a Profiles project and leverage our predictive features. The QuickStart guide itself has an accompanying data set that can be duplicated into Snowflake, or you can send a sampling of events below, as well as your own custom events to test the Quickstart. The Quickstart relies on the following events:<br>
+        <code>
+          TRACKS<br>
+          IDENTIFIES<br>
+          PAGES<br>
+          ORDER_COMPLETED
+        </code><br>
+        The button below allows you to send a live data set of the above events, which you can run the Quickstart Guide on. More details <a href="https://quickstarts.snowflake.com/guide/rudderstack_predictions/index.html#0">here</a><br>
+        <button onClick="sendEvent({type: 'identify'})">Send profiles data</button>
+      </aside>
+    </section>
+
+    <h2>What you can expect to see in the warehouse</h2>
+    <article>
+      When you send all this data, it will be loaded into your warehouse in a very specific manner. Each event type will have a specific behavior in the warehouse.
+      <h3>Page Events</h3>
+      <h5>Pages table</h5>
+      Page events will be added to a single table called pages. This will contain all pageviews for all page names, titles and categories.
+      <h3>Track Events</h3>
+      <h5>Tracks table</h5>
+      Track events will create multiple tables. All track events will be stored in a single tracks table with all of the common fields and the event name of each track call. 
+      <h5>"event name" table</h5>
+      Each track call will also create an additional table for each event, with the name of the event name. This table will contain all of the custom properties for the specific event. This prevents adding excesive columns in the track table with null values. 
+      <h3>Identify Events</h3>
+      <h5>Identifies table</h5>
+      Each identify call will add a new row to the identifies table. This table will allow you to see how/if traits change over time, additional anonymousIds for a single customer or how many times a user has been identified (often used for logins)
+      <h5>Users table</h5>
+      Identify calls will also create a Users table which will be upserted per userId with the most recent traits and anonymousId for a user
+    </article>
+
+    <div class="scroll">Tracking Scroll...</div>
+    <div class="scroll">Tracking Scroll...</div>
+    <div class="scroll">Tracking Scroll...</div>
+    <div class="scroll">Tracking Scroll...</div>
+  <!-- rudderanalytics = window.rudderanalytics = []; -->
+
+  <!-- var  methods = [ -->
+  <!--   "load", -->
+  <!--   "page", -->
+  <!--   "track", -->
+  <!--   "identify", -->
+  <!--   "alias", -->
+  <!--   "group", -->
+  <!--   "ready", -->
+  <!--   "reset", -->
+  <!--   "getAnonymousId", -->
+  <!--   "setAnonymousId" -->
+  <!-- ]; -->
+
+  <!-- for (var i = 0; i &lt; methods.length; i++) { -->
+  <!--   var method = methods[i]; -->
+  <!--   rudderanalytics[method] = function (methodName) { -->
+  <!--     return function () { -->
+  <!--       rudderanalytics.push([methodName].concat(Array.prototype.slice.call(arguments))); -->
+  <!--     }; -->
+  <!--   }(method); -->
+  <!-- } -->
+
+
+    <!-- <div><pre><code id="codeBlock" onclick="changeContent(this) "class="language-javascript"> -->
+<!-- rudderanalytics.load(), -->
+    <!-- </code></pre></div> -->
+  
+  </main>
+
+  <script>
+    (function() {
+      if (window.localStorage.getItem('RS_writeKey') && window.localStorage.getItem('RS_dataplane')) {
+        document.getElementById('key-entry').classList.add("hidden")
+        setKeyOnDOM()
+      }
+    })();
+  </script>
+</body>
+</html>
