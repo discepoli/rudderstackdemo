@@ -274,7 +274,8 @@ input {
 </style>
 </head>
 
-<body onScroll="sendEvent({type: 'track', event: 'scroll'})" style="height: 300vh">
+<body>
+  <!-- body onScroll="sendEvent({type: 'track', event: 'scroll'})" style="height: 300vh" -->
   <main>
 
     <div id="key-entry"><form onSubmit="addKey(event)">Dataplane URL: <input id="dataplane-input" type="text" /> Write Key: <input id="key-input" type="text" /> <input type="Submit" /></form></div>
@@ -362,6 +363,44 @@ input {
         setKeyOnDOM()
       }
     })();
+  </script>
+  <script>
+  // Function to calculate scroll depth percentage
+  function getScrollDepth() {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight
+    );
+    const scrollableHeight = documentHeight - windowHeight;
+    const scrollPercentage = Math.round((scrollTop / scrollableHeight) * 100);
+    return scrollPercentage;
+  }
+  
+  // Track scroll depth at specific thresholds
+  const trackedThresholds = new Set(); // To avoid duplicate tracking
+  const thresholds = [25, 50, 75, 100]; // Define your desired thresholds
+  
+  function trackScrollDepth() {
+    const scrollDepth = getScrollDepth();
+  
+    thresholds.forEach((threshold) => {
+      if (scrollDepth >= threshold && !trackedThresholds.has(threshold)) {
+        trackedThresholds.add(threshold);
+        rudderanalytics.track("Scroll Depth Reached", {
+          threshold: threshold,
+          page_url: window.location.href,
+          page_title: document.title,
+          scroll_percentage: scrollDepth,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+  }
+  
+  // Add scroll event listener
+  window.addEventListener("scroll", trackScrollDepth);
   </script>
 </body>
 </html>
