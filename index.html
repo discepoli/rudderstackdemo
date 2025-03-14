@@ -380,7 +380,7 @@ input {
   
   // Track scroll depth at specific thresholds
   const trackedThresholds = new Set(); // To avoid duplicate tracking
-  const thresholds = [25, 50, 75, 100]; // Define your desired thresholds
+  const thresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]; // Define your desired thresholds
   
   function trackScrollDepth() {
     const scrollDepth = getScrollDepth();
@@ -389,11 +389,7 @@ input {
       if (scrollDepth >= threshold && !trackedThresholds.has(threshold)) {
         trackedThresholds.add(threshold);
         rudderanalytics.track("Scroll Depth Reached", {
-          threshold: threshold,
-          page_url: window.location.href,
-          page_title: document.title,
-          scroll_percentage: scrollDepth,
-          timestamp: new Date().toISOString()
+          scroll_percentage: scrollDepth
         });
       }
     });
