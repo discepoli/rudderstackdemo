@@ -388,18 +388,17 @@ input {
     thresholds.forEach((threshold) => {
       if (scrollDepth >= threshold && !trackedThresholds.has(threshold)) {
         trackedThresholds.add(threshold);
-        // Standard Event Send
-        // rudderanalytics.track("Scroll Depth Reached", {
-        //   scroll_percentage: threshold
-        // });
-        // Send Event and Log to Console
-        sendEvent("Scroll Depth Reached", {scroll_percentage: threshold})
+        rudderanalytics.track("Scroll Depth Reached", {
+          scroll_percentage: threshold
+        });
+        console.log('RS Event ->', "Scroll Depth Reached - " + threshold) ;
+        
       }
     });
   }
   
   // Add scroll event listener
-  window.addEventListener("scroll", trackScrollDepth);
+  window.addEventListener(type: 'track',event , trackScrollDepth);
   </script>
 </body>
 </html>
